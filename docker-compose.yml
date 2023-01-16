@@ -1,0 +1,45 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+services:
+  activemq:
+#    image: symptoma/activemq:latest
+    image: rmohr/activemq:latest
+    container_name: activemq
+    ports:
+      - 61616:61616
+      - 8161:8161
+#    volumes:
+#      - ~/Documents/data/activemq/data:/data/activemq
+#      - ~/Documents/data/activemq/log:/var/log/activemq
+
+  db:
+    image: postgres
+    container_name: db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=example
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: 'transfer-system:latest'
+    build:
+      context: .
+    container_name: app
+#    ports:
+#      - "8080:8080"
+    depends_on:
+      - db
+      - activemq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=example
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
